@@ -1,4 +1,3 @@
-// src/Pages/hm.tsx
 import React from "react";
 
 const Hm: React.FC = () => {
