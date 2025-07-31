@@ -1,13 +1,13 @@
 // src/App.tsx
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Hm from "./Pages/Home";
+import HomePage from "./Pages/HomePage";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Hm />} />
+        <Route path="/" element={<HomePage />} />
       </Routes>
     </Router>
   );
