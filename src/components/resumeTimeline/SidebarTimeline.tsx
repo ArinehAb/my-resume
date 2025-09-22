@@ -1,4 +1,3 @@
-// src/components/timeline/SidebarTimeline.tsx
 import React, { useState } from "react";
 
 type TimelineItem = {
@@ -25,11 +24,10 @@ const SidebarTimeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
 
   return (
     <section className="w-full">
-      {/* container keeps right content nicely padded, but we pull the sidebar left */}
       <div className="container mx-auto max-w-7xl px-8 py-12 grid grid-cols-[220px_minmax(0,1fr)] gap-12">
-        {/* SIDEBAR — pulled left */}
+        {/* SIDEBAR */}
         <aside className="relative md:sticky md:top-24 self-start -ml-6 sm:-ml-10 md:-ml-16 lg:-ml-20">
-          {/* vertical spine, aligned with the dots */}
+          {/* vertical line */}
           <div
             className="absolute left-[10px] top-0 bottom-0 w-[2px] rounded"
             style={{ backgroundColor: colors.line }}
@@ -45,7 +43,9 @@ const SidebarTimeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
                     style={{
                       borderColor: isActive ? colors.dot : colors.line,
                       backgroundColor: isActive ? colors.dot : "#fff",
-                      boxShadow: isActive ? "0 0 0 4px rgba(167,109,99,0.2)" : "none",
+                      boxShadow: isActive
+                        ? "0 0 0 4px rgba(167,109,99,0.2)"
+                        : "none",
                     }}
                     aria-hidden
                   />
@@ -53,12 +53,23 @@ const SidebarTimeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
                     onClick={() => setActive(item.id)}
                     className="text-left focus:outline-none"
                   >
+                    {/* Job title */}
                     <div
                       className="text-base font-medium"
                       style={{ color: isActive ? colors.dot : colors.text }}
                     >
                       {item.title}
                     </div>
+
+                    {/* Company name */}
+                    <div
+                      className="text-sm"
+                      style={{ color: isActive ? colors.text : colors.muted }}
+                    >
+                      {item.org}
+                    </div>
+
+                    {/* Date range */}
                     <div className="text-sm" style={{ color: colors.muted }}>
                       {item.range}
                     </div>
