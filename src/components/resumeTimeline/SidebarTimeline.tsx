@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-type TimelineItem = {
+export type TimelineItem = {
   id: string;
   title: string;
   range: string;
@@ -20,7 +20,7 @@ const colors = {
 
 const SidebarTimeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
   const defaultItem = items.find((i) => i.current) ?? items[0];
-  const [active, setActive] = useState<string>(defaultItem.id);
+  const [active, setActive] = useState<string>(defaultItem?.id ?? "");
 
   return (
     <section className="w-full">
