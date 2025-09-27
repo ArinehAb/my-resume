@@ -34,40 +34,80 @@ const rowToItem = (r: DbTimelineRow): TimelineItem => ({
   current: !r.endDate || /present/i.test(r.endDate),
 });
 
+const isEducation = (item: TimelineItem) => {
+  const t = item.title.toLowerCase();
+  const o = item.org.toLowerCase();
+  return (
+    t.includes("b.s.") ||
+    t.includes("bachelors") ||
+    t.includes("bachelor") ||
+    t.includes("m.s.") ||
+    t.includes("masters") ||
+    t.includes("master") ||
+    t.includes("degree") ||
+    t.includes("diploma") ||
+    o.includes("university") ||
+    o.includes("college") ||
+    o.includes("school")
+  );
+};
+
 const HomePage: React.FC = () => {
   const [items, setItems] = useState<TimelineItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("Timeline")
-        .select("*")
-        // if your dates are "MM/YYYY" strings, descending string order is fine
-        .order("startDate", { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from("Timeline")
+          .select("*")
+          .order("startDate", { ascending: false });
 
-      if (error) {
-        setError(error.message);
-        return;
+        if (error) {
+          setError(error.message);
+          return;
+        }
+
+        const mapped = (data as DbTimelineRow[]).map(rowToItem);
+
+        const current = mapped.filter((i) => i.current && !isEducation(i));
+        const jobs = mapped.filter((i) => !i.current && !isEducation(i));
+        const edu = mapped.filter((i) => isEducation(i));
+
+        const ordered = [...current, ...jobs, ...edu];
+
+        setItems(ordered);
+      } catch (e: any) {
+        setError(e?.message ?? "Unknown error");
       }
-
-      const mapped = (data as DbTimelineRow[]).map(rowToItem);
-
-      mapped.sort((a, b) => Number(b.current) - Number(a.current));
-
-      setItems(mapped);
     })();
   }, []);
 
   const body = useMemo(() => {
     if (error) {
-      return <div className="px-8 py-6 text-red-600">Failed to load timeline: {error}</div>;
+      return (
+        <div className="px-8 py-6 text-red-700 bg-red-50 border border-red-200 rounded">
+          <div className="font-semibold mb-1">Timeline failed to load</div>
+          <pre className="text-sm whitespace-pre-wrap">{String(error)}</pre>
+          <div className="mt-2 text-xs text-red-600">
+            Tip: Check your .env values and RLS policy.
+          </div>
+        </div>
+      );
     }
     if (!items) {
       return (
         <div className="px-8 py-12">
           <div className="h-6 w-40 mb-3 animate-pulse rounded bg-gray-200" />
           <div className="h-24 w-full max-w-2xl animate-pulse rounded bg-gray-200" />
+        </div>
+      );
+    }
+    if (items.length === 0) {
+      return (
+        <div className="px-8 py-6 text-gray-700 bg-gray-50 border border-gray-200 rounded">
+          No timeline rows found. Add rows in Supabase table <code>public."Timeline"</code>.
         </div>
       );
     }

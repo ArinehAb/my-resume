@@ -1,4 +1,3 @@
-// src/components/sections/ResumeHoverPanels.tsx
 import React, { useState } from "react";
 
 type Key = "skills" | "education" | "projects" | "ecs";
@@ -19,7 +18,6 @@ const items: { key: Key; label: string }[] = [
   { key: "ecs", label: "ECS" },
 ];
 
-// tiny pill badge component
 const Chip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span
     className="px-3 py-1 text-sm rounded-full"
@@ -35,7 +33,6 @@ const Chip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </span>
 );
 
-// level dots (1–5)
 const LevelDots: React.FC<{ level: number }> = ({ level }) => (
   <div className="flex gap-1 mt-2">
     {Array.from({ length: 5 }).map((_, i) => (
