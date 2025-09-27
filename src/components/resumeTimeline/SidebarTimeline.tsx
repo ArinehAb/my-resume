@@ -25,9 +25,7 @@ const SidebarTimeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
   return (
     <section className="w-full">
       <div className="container mx-auto max-w-7xl px-8 py-12 grid grid-cols-[220px_minmax(0,1fr)] gap-12">
-        {/* SIDEBAR */}
         <aside className="relative md:sticky md:top-24 self-start -ml-6 sm:-ml-10 md:-ml-16 lg:-ml-20">
-          {/* vertical line */}
           <div
             className="absolute left-[10px] top-0 bottom-0 w-[2px] rounded"
             style={{ backgroundColor: colors.line }}
@@ -37,7 +35,6 @@ const SidebarTimeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
               const isActive = active === item.id;
               return (
                 <li key={item.id} className="pl-8">
-                  {/* dot */}
                   <span
                     className="absolute -ml-[26px] mt-2 w-4 h-4 rounded-full border-2 bg-white"
                     style={{
@@ -53,23 +50,18 @@ const SidebarTimeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
                     onClick={() => setActive(item.id)}
                     className="text-left focus:outline-none"
                   >
-                    {/* Job title */}
                     <div
                       className="text-base font-medium"
                       style={{ color: isActive ? colors.dot : colors.text }}
                     >
                       {item.title}
                     </div>
-
-                    {/* Company name */}
                     <div
                       className="text-sm"
                       style={{ color: isActive ? colors.text : colors.muted }}
                     >
                       {item.org}
                     </div>
-
-                    {/* Date range */}
                     <div className="text-sm" style={{ color: colors.muted }}>
                       {item.range}
                     </div>
@@ -80,7 +72,6 @@ const SidebarTimeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
           </ol>
         </aside>
 
-        {/* DETAILS */}
         <main>
           {items.map(
             (item) =>

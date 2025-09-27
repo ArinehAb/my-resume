@@ -13,7 +13,6 @@ const SelfIntroduction: React.FC = () => {
           />
         </div>
 
-        {/* Self Introduction */}
         <div className="ml-16">
           <h1 className="text-6xl font-extrabold tracking-tight text-[#6B3E2E]">
             Hello, I'm{" "}
@@ -22,7 +21,6 @@ const SelfIntroduction: React.FC = () => {
 
           <h2 className="mt-6 text-3xl text-[#7B4B3A]">Software Engineer</h2>
 
-          {/* ✨ Added Statement */}
           <p className="mt-6 text-lg leading-relaxed text-[#3E2723] max-w-3xl italic">
             Believes in the positive influence of teamwork, encourages knowledge
             sharing, and welcomes partnerships. Eager to develop skills while

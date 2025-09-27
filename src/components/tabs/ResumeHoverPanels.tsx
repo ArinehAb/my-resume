@@ -58,7 +58,6 @@ const ResumeHoverPanels: React.FC = () => {
       style={{ borderColor: `${CoffeeRose.rosewd}55`, backgroundColor: CoffeeRose.cream }}
     >
       <div className="container mx-auto max-w-7xl px-8">
-        {/* Menu row */}
         <nav className="flex gap-6 py-3 relative" role="menubar">
           {items.map(({ key, label }) => (
             <div
@@ -67,7 +66,6 @@ const ResumeHoverPanels: React.FC = () => {
               onMouseEnter={() => setOpen(key)}
               onMouseLeave={() => setOpen((prev) => (prev === key ? null : prev))}
             >
-              {/* Trigger */}
               <button
                 role="menuitem"
                 className="px-3 py-2 rounded-md transition-colors"
@@ -82,7 +80,6 @@ const ResumeHoverPanels: React.FC = () => {
                 {label}
               </button>
 
-              {/* Panel */}
               {open === key && (
                 <div
                   className="absolute left-0 mt-2 w-[min(90vw,64rem)] rounded-xl shadow-xl p-5 z-50"
@@ -91,7 +88,6 @@ const ResumeHoverPanels: React.FC = () => {
                     border: `1px solid ${CoffeeRose.rosewd}`,
                   }}
                 >
-                  {/* ===== SKILLS (Redesigned) ===== */}
                   {key === "skills" && (
                     <div className="grid gap-5 md:grid-cols-2">
                       {/* Frontend */}
@@ -115,8 +111,6 @@ const ResumeHoverPanels: React.FC = () => {
                         </div>
                         <LevelDots level={5} />
                       </div>
-
-                      {/* Backend / APIs */}
                       <div
                         className="rounded-xl p-4"
                         style={{
@@ -138,7 +132,6 @@ const ResumeHoverPanels: React.FC = () => {
                         <LevelDots level={4} />
                       </div>
 
-                      {/* DevOps / CI-CD */}
                       <div
                         className="rounded-xl p-4"
                         style={{
@@ -160,7 +153,6 @@ const ResumeHoverPanels: React.FC = () => {
                         <LevelDots level={3} />
                       </div>
 
-                      {/* Testing / Automation */}
                       <div
                         className="rounded-xl p-4"
                         style={{
@@ -184,7 +176,6 @@ const ResumeHoverPanels: React.FC = () => {
                     </div>
                   )}
 
-                  {/* ===== EDUCATION ===== */}
                   {key === "education" && (
                     <div>
                       <h3 className="text-lg font-semibold mb-2" style={{ color: CoffeeRose.mocha }}>
@@ -208,7 +199,6 @@ const ResumeHoverPanels: React.FC = () => {
                     </div>
                   )}
 
-                  {/* ===== PROJECTS ===== */}
                   {key === "projects" && (
                     <div className="grid sm:grid-cols-2 gap-4">
                       {[
@@ -233,8 +223,6 @@ const ResumeHoverPanels: React.FC = () => {
                       ))}
                     </div>
                   )}
-
-                  {/* ===== ECS ===== */}
                   {key === "ecs" && (
                     <div>
                       <h3 className="text-lg font-semibold mb-2" style={{ color: CoffeeRose.mocha }}>
