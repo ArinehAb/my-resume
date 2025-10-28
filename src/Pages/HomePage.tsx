@@ -107,7 +107,8 @@ const HomePage: React.FC = () => {
     if (items.length === 0) {
       return (
         <div className="px-8 py-6 text-gray-700 bg-gray-50 border border-gray-200 rounded">
-          No timeline rows found. Add rows in Supabase table <code>public."Timeline"</code>.
+          No timeline rows found. Add rows in Supabase table{" "}
+          <code>public."Timeline"</code>.
         </div>
       );
     }
@@ -117,7 +118,10 @@ const HomePage: React.FC = () => {
   return (
     <div>
       <SelfIntroduction />
+
+      {/* Nav bar with links to /skills, /education, /projects */}
       <ResumeHoverPanels />
+
       {body}
     </div>
   );

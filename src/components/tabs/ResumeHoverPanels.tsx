@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-
-type Key = "skills" | "education" | "projects" | "ecs";
 
 const CoffeeRose = {
   cream:  "#FFF8F0",
@@ -12,11 +11,12 @@ const CoffeeRose = {
   cocoa:  "#7B4B3A",
 };
 
-const items: { key: Key; label: string }[] = [
-  { key: "skills", label: "Skills" },
-  { key: "education", label: "Education" },
-  { key: "projects", label: "Projects" },
-  { key: "ecs", label: "ECS" },
+type Key = "skills" | "education" | "projects";
+
+const navItems: { key: Key; label: string; to: string }[] = [
+  { key: "skills", label: "Skills", to: "/skills" },
+  { key: "education", label: "Education", to: "/education" },
+  { key: "projects", label: "Projects", to: "/projects" },
 ];
 
 const Chip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -41,8 +41,10 @@ const LevelDots: React.FC<{ level: number }> = ({ level }) => (
         key={i}
         className="inline-block w-2.5 h-2.5 rounded-full"
         style={{
-          backgroundColor: i < level ? CoffeeRose.dusty : `${CoffeeRose.rosewd}88`,
-          boxShadow: i < level ? "0 0 0 1px rgba(0,0,0,0.04)" : "none",
+          backgroundColor:
+            i < level ? CoffeeRose.dusty : `${CoffeeRose.rosewd}88`,
+          boxShadow:
+            i < level ? "0 0 0 1px rgba(0,0,0,0.04)" : "none",
         }}
       />
     ))}
@@ -58,16 +60,13 @@ type Skill = {
   sort_order?: number | null;
 };
 
-type Project = {
+type HoverProject = {
   id: number;
-  created_at?: string | null;
   title: string;
   description: string | null;
   technologies: string[] | null;
-  bullets: string[] | null;
-  media_url: string | null;  // image, video, or link
-  category: string | null;
-  featured: boolean | null;
+  media_url: string | null;
+  website_url: string | null;
 };
 
 const categoryOrder = [
@@ -82,44 +81,63 @@ const categoryOrder = [
   "General",
 ];
 
-/* Helper: detect video-ish URL */
 const isVideoUrl = (url: string) => {
   const lower = url.toLowerCase();
-  return lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.includes("youtube.com") || lower.includes("youtu.be") || lower.includes("vimeo.com");
+  return (
+    lower.endsWith(".mp4") ||
+    lower.endsWith(".webm") ||
+    lower.endsWith(".mov") ||
+    lower.includes("youtube.com") ||
+    lower.includes("youtu.be") ||
+    lower.includes("vimeo.com")
+  );
+};
+
+const isExternalVideoHost = (url: string) => {
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("youtube.com") ||
+    lower.includes("youtu.be") ||
+    lower.includes("vimeo.com")
+  );
 };
 
 const ResumeHoverPanels: React.FC = () => {
+  const location = useLocation();
   const [open, setOpen] = useState<Key | null>(null);
 
-  /* ---------- Skills (Supabase) ---------- */
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [skillsError, setSkillsError] = useState<string | null>(null);
-  const [skillsLoading, setSkillsLoading] = useState<boolean>(false);
+  // ------------------ MODAL STATE (for preview play) ------------------
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMedia, setModalMedia] = useState<string | null>(null);
+  const [modalAlt, setModalAlt] = useState<string>("");
 
+  const openModalWithMedia = (src: string | null, alt: string) => {
+    if (!src) return;
+    setModalMedia(src);
+    setModalAlt(alt);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalMedia(null);
+    setModalAlt("");
+  };
+
+  // ------- Skills fetch (all skills) -------
+  const [skills, setSkills] = useState<Skill[]>([]);
   useEffect(() => {
     (async () => {
-      try {
-        setSkillsLoading(true);
-        const { data, error } = await supabase
-          .from("skills")
-          .select("id, category, name, level, sort_order")
-          .order("sort_order", { ascending: true })
-          .order("name", { ascending: true });
-
-        if (error) {
-          setSkillsError(error.message);
-          return;
-        }
-        setSkills(data ?? []);
-      } catch (e: any) {
-        setSkillsError(e?.message ?? "Failed to load skills.");
-      } finally {
-        setSkillsLoading(false);
-      }
+      const { data } = await supabase
+        .from("skills")
+        .select("id, category, name, level, sort_order")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+      setSkills(data ?? []);
     })();
   }, []);
 
-  const groupedSkills = useMemo(() => {
+  const groupedSkillsAll = useMemo(() => {
     const groups = skills.reduce((acc, s) => {
       if (!acc[s.category]) acc[s.category] = [];
       acc[s.category].push(s);
@@ -138,314 +156,396 @@ const ResumeHoverPanels: React.FC = () => {
     return orderedEntries;
   }, [skills]);
 
-  /* ---------- Projects (Supabase) ---------- */
-  const [projects, setProjects] = useState<Project[] | null>(null);
-  const [projectsError, setProjectsError] = useState<string | null>(null);
-  const [projectsLoading, setProjectsLoading] = useState<boolean>(false);
-
+  // Projects PREVIEW fetch
+  const [projects, setProjects] = useState<HoverProject[]>([]);
   useEffect(() => {
     (async () => {
-      try {
-        setProjectsLoading(true);
-        const { data, error } = await supabase
-          .from("projects")
-          .select("id, created_at, title, description, technologies, bullets, media_url, category, featured")
-          .order("featured", { ascending: false })
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          setProjectsError(error.message);
-          return;
-        }
-        setProjects(data ?? []);
-      } catch (e: any) {
-        setProjectsError(e?.message ?? "Failed to load projects.");
-      } finally {
-        setProjectsLoading(false);
-      }
+      const { data } = await supabase
+        .from("projects")
+        .select(
+          "id, title, description, technologies, media_url, website_url, featured, created_at"
+        )
+        .order("featured", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(3);
+      setProjects((data as any) ?? []);
     })();
   }, []);
 
   return (
-    <section
-      aria-label="Resume quick sections"
-      className="w-full border-t"
-      style={{ borderColor: `${CoffeeRose.rosewd}55`, backgroundColor: CoffeeRose.cream }}
-    >
-      <div className="container mx-auto max-w-7xl px-8">
-        <nav className="flex gap-6 py-3 relative" role="menubar">
-          {items.map(({ key, label }) => (
-            <div
-              key={key}
-              className="relative"
-              onMouseEnter={() => setOpen(key)}
-              onMouseLeave={() => setOpen((prev) => (prev === key ? null : prev))}
-            >
-              <button
-                role="menuitem"
-                className="px-3 py-2 rounded-md transition-colors"
-                style={{
-                  color: open === key ? CoffeeRose.mocha : `${CoffeeRose.mocha}CC`,
-                  backgroundColor: open === key ? `${CoffeeRose.blush}66` : "transparent",
-                  border: `1px solid ${open === key ? CoffeeRose.rosewd : "transparent"}`,
-                }}
-                onFocus={() => setOpen(key)}
-                onBlur={() => setOpen((prev) => (prev === key ? null : prev))}
-              >
-                {label}
-              </button>
+    <>
+      <section
+        aria-label="Resume quick sections"
+        className="w-full border-t"
+        style={{
+          borderColor: `${CoffeeRose.rosewd}55`,
+          backgroundColor: CoffeeRose.cream,
+        }}
+      >
+        <div className="container mx-auto max-w-7xl px-8">
+          <nav className="flex gap-6 py-3 relative" role="menubar">
+            {navItems.map(({ key, label, to }) => {
+              const isActive = location.pathname === to;
 
-              {open === key && (
+              return (
                 <div
-                  className="absolute left-0 mt-2 w-[min(90vw,64rem)] rounded-xl shadow-xl p-5 z-50"
-                  style={{
-                    backgroundColor: CoffeeRose.cream,
-                    border: `1px solid ${CoffeeRose.rosewd}`,
-                  }}
+                  key={key}
+                  className="relative"
+                  onMouseEnter={() => setOpen(key)}
+                  onMouseLeave={() =>
+                    setOpen((prev) => (prev === key ? null : prev))
+                  }
                 >
-                  {/* ---------- SKILLS (Dynamic) ---------- */}
-                  {key === "skills" && (
-                    <div className="grid gap-5 md:grid-cols-2">
-                      {skillsLoading && (
-                        <>
-                          <div className="rounded-xl p-4 bg-white border" style={{ borderColor: CoffeeRose.rosewd }}>
-                            <div className="h-5 w-40 mb-4 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-6 w-full mb-2 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-6 w-3/4 mb-2 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-6 w-2/3 mb-2 bg-gray-200 animate-pulse rounded" />
-                          </div>
-                          <div className="rounded-xl p-4 bg-white border" style={{ borderColor: CoffeeRose.rosewd }}>
-                            <div className="h-5 w-40 mb-4 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-6 w-full mb-2 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-6 w-3/4 mb-2 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-6 w-2/3 mb-2 bg-gray-200 animate-pulse rounded" />
-                          </div>
-                        </>
-                      )}
+                  <Link
+                    to={to}
+                    role="menuitem"
+                    className="px-3 py-2 rounded-md transition-colors border inline-block"
+                    style={{
+                      color: isActive
+                        ? CoffeeRose.mocha
+                        : `${CoffeeRose.mocha}CC`,
+                      backgroundColor: isActive
+                        ? `${CoffeeRose.blush}66`
+                        : "transparent",
+                      borderColor: isActive
+                        ? CoffeeRose.rosewd
+                        : "transparent",
+                    }}
+                  >
+                    {label}
+                  </Link>
 
-                      {skillsError && (
-                        <div
-                          className="rounded-xl p-4"
-                          style={{
-                            backgroundColor: "#FFFFFF",
-                            border: `1px solid ${CoffeeRose.rosewd}`,
-                            boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
-                            color: CoffeeRose.cocoa,
-                          }}
-                        >
-                          Error loading skills: {skillsError}
-                        </div>
-                      )}
+                  {open === key && (
+                    <div
+                      className="absolute left-0 mt-2 w-[min(90vw,64rem)] rounded-xl shadow-xl p-5 z-50"
+                      style={{
+                        backgroundColor: CoffeeRose.cream,
+                        border: `1px solid ${CoffeeRose.rosewd}`,
+                        maxHeight: "70vh",
+                        overflowY: "auto",
+                      }}
+                    >
+                      {/* ---------- SKILLS (all categories, all skills) ---------- */}
+                      {key === "skills" && (
+                        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                          {groupedSkillsAll.map(([category, list]) => {
+                            const avg =
+                              list.length > 0
+                                ? Math.round(
+                                    list.reduce(
+                                      (a, b) => a + b.level,
+                                      0
+                                    ) / list.length
+                                  )
+                                : 0;
 
-                      {!skillsLoading && !skillsError && groupedSkills.length === 0 && (
-                        <div
-                          className="rounded-xl p-4"
-                          style={{
-                            backgroundColor: "#FFFFFF",
-                            border: `1px solid ${CoffeeRose.rosewd}`,
-                            boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
-                            color: CoffeeRose.cocoa,
-                          }}
-                        >
-                          No skills found. Add rows to <code>public.skills</code> in Supabase.
-                        </div>
-                      )}
-
-                      {!skillsLoading &&
-                        !skillsError &&
-                        groupedSkills.map(([category, items]) => {
-                          const avg =
-                            items.length > 0
-                              ? Math.round(items.reduce((a, b) => a + b.level, 0) / items.length)
-                              : 0;
-                          return (
-                            <div
-                              key={category}
-                              className="rounded-xl p-4"
-                              style={{
-                                backgroundColor: "#FFFFFF",
-                                border: `1px solid ${CoffeeRose.rosewd}`,
-                                boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
-                              }}
-                            >
-                              <h3
-                                className="text-lg font-semibold mb-2"
-                                style={{ color: CoffeeRose.mocha }}
+                            return (
+                              <div
+                                key={category}
+                                className="rounded-xl p-4 bg-white"
+                                style={{
+                                  border: `1px solid ${CoffeeRose.rosewd}`,
+                                  boxShadow:
+                                    "0 4px 16px rgba(0,0,0,0.06)",
+                                }}
                               >
-                                {category}
-                              </h3>
-                              <div className="flex flex-wrap gap-2">
-                                {items.map((skill) => (
-                                  <Chip key={skill.id}>{skill.name}</Chip>
-                                ))}
+                                <h3
+                                  className="text-lg font-semibold mb-2"
+                                  style={{ color: CoffeeRose.mocha }}
+                                >
+                                  {category}
+                                </h3>
+
+                                <div className="flex flex-wrap gap-2">
+                                  {list.map((skill) => (
+                                    <Chip key={skill.id}>
+                                      {skill.name}
+                                    </Chip>
+                                  ))}
+                                </div>
+
+                                <LevelDots level={avg} />
                               </div>
-                              <LevelDots level={avg} />
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-
-                  {/* ---------- EDUCATION (Static for now) ---------- */}
-                  {key === "education" && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2" style={{ color: CoffeeRose.mocha }}>
-                        Education
-                      </h3>
-                      <div
-                        className="rounded-lg p-4"
-                        style={{
-                          backgroundColor: CoffeeRose.cream,
-                          border: `1px solid ${CoffeeRose.rosewd}`,
-                        }}
-                      >
-                        <p style={{ color: CoffeeRose.cocoa }}>
-                          B.S. in Computer Science —{" "}
-                          <span style={{ color: CoffeeRose.dusty }}>
-                            California State Polytechnic University, Pomona
-                          </span>
-                        </p>
-                        <p className="text-sm opacity-80" style={{ color: CoffeeRose.mocha }}>
-                          2016 – 2020
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ---------- PROJECTS (Dynamic) ---------- */}
-                  {key === "projects" && (
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      {projectsLoading && (
-                        <>
-                          <div className="rounded-lg p-4 bg-white border" style={{ borderColor: CoffeeRose.rosewd }}>
-                            <div className="h-5 w-48 mb-3 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-20 w-full mb-3 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-40 w-full bg-gray-200 animate-pulse rounded" />
-                          </div>
-                          <div className="rounded-lg p-4 bg-white border" style={{ borderColor: CoffeeRose.rosewd }}>
-                            <div className="h-5 w-48 mb-3 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-20 w-full mb-3 bg-gray-200 animate-pulse rounded" />
-                            <div className="h-40 w-full bg-gray-200 animate-pulse rounded" />
-                          </div>
-                        </>
-                      )}
-
-                      {projectsError && (
-                        <div
-                          className="rounded-lg p-4"
-                          style={{
-                            backgroundColor: "#FFFFFF",
-                            border: `1px solid ${CoffeeRose.rosewd}`,
-                            color: CoffeeRose.cocoa,
-                          }}
-                        >
-                          Error loading projects: {projectsError}
+                            );
+                          })}
                         </div>
                       )}
 
-                      {!projectsLoading && !projectsError && (!projects || projects.length === 0) && (
-                        <div
-                          className="rounded-lg p-4"
-                          style={{
-                            backgroundColor: CoffeeRose.cream,
-                            border: `1px solid ${CoffeeRose.rosewd}`,
-                            color: CoffeeRose.cocoa,
-                          }}
-                        >
-                          No projects found. Add rows to <code>public.projects</code> in Supabase.
-                        </div>
-                      )}
+                      {/* ---------- EDUCATION ---------- */}
+                      {key === "education" && (
+                        <div>
+                          <h3
+                            className="text-lg font-semibold mb-2"
+                            style={{ color: CoffeeRose.mocha }}
+                          >
+                            Education
+                          </h3>
 
-                      {!projectsLoading && !projectsError && projects?.map((p) => (
-                        <div
-                          key={p.id}
-                          className="rounded-lg p-4"
-                          style={{
-                            backgroundColor: "#FFFFFF",
-                            border: `1px solid ${CoffeeRose.rosewd}`,
-                          }}
-                        >
-                          <h4 className="font-semibold" style={{ color: CoffeeRose.dusty }}>
-                            {p.title}
-                          </h4>
-                          {p.description && (
-                            <p className="text-sm mt-1" style={{ color: CoffeeRose.mocha }}>
-                              {p.description}
+                          <div
+                            className="rounded-lg p-4"
+                            style={{
+                              backgroundColor: CoffeeRose.cream,
+                              border: `1px solid ${CoffeeRose.rosewd}`,
+                            }}
+                          >
+                            <p style={{ color: CoffeeRose.cocoa }}>
+                              B.S. in Computer Science —{" "}
+                              <span
+                                style={{ color: CoffeeRose.dusty }}
+                              >
+                                California State Polytechnic
+                                University, Pomona
+                              </span>
                             </p>
-                          )}
+                            <p
+                              className="text-sm opacity-80"
+                              style={{ color: CoffeeRose.mocha }}
+                            >
+                              2016 – 2020
+                            </p>
+                          </div>
 
-                          {/* Tech chips */}
-                          {p.technologies?.length ? (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {p.technologies.map((t) => (
-                                <Chip key={t}>{t}</Chip>
-                              ))}
-                            </div>
-                          ) : null}
+                          <div className="text-sm text-right mt-4">
+                            <Link
+                              to="/education"
+                              style={{ color: CoffeeRose.dusty }}
+                              className="underline"
+                            >
+                              View full education →
+                            </Link>
+                          </div>
+                        </div>
+                      )}
 
-                          {/* Bullets */}
-                          {p.bullets?.length ? (
-                            <ul className="list-disc ml-5 mt-3 text-sm" style={{ color: CoffeeRose.cocoa }}>
-                              {p.bullets.map((b) => (
-                                <li key={b}>{b}</li>
-                              ))}
-                            </ul>
-                          ) : null}
+                      {/* PROJECTS */}
+                      {key === "projects" && (
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {projects.map((p) => {
+                            const canPlay =
+                              p.media_url && isVideoUrl(p.media_url);
 
-                          {/* Media preview */}
-                          {p.media_url ? (
-                            <div className="mt-4 rounded overflow-hidden">
-                              {isVideoUrl(p.media_url) ? (
-                                // Simple video/youtube handling; you could enhance with a player
-                                p.media_url.includes("youtube.com") || p.media_url.includes("youtu.be") ? (
-                                  <a
-                                    href={p.media_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="underline"
+                            const isExternal = p.media_url
+                              ? isExternalVideoHost(p.media_url)
+                              : false;
+
+                            return (
+                              <div
+                                key={p.id}
+                                className="rounded-lg p-4 bg-white flex flex-col"
+                                style={{
+                                  border: `1px solid ${CoffeeRose.rosewd}`,
+                                }}
+                              >
+                                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                                  <h4
+                                    className="font-semibold"
                                     style={{ color: CoffeeRose.dusty }}
                                   >
-                                    Watch video
-                                  </a>
-                                ) : (
-                                  <video
-                                    src={p.media_url}
-                                    controls
-                                    className="w-full rounded"
-                                  />
-                                )
-                              ) : (
-                                <img
-                                  src={p.media_url}
-                                  alt={p.title}
-                                  className="w-full h-48 object-cover rounded shadow"
-                                />
-                              )}
-                            </div>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                                    {p.title}
+                                  </h4>
 
-                  {/* ---------- ECS (Static placeholder) ---------- */}
-                  {key === "ecs" && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2" style={{ color: CoffeeRose.mocha }}>
-                        ECS
-                      </h3>
-                      <p className="text-sm" style={{ color: CoffeeRose.cocoa }}>
-                        Add your ECS details here (e.g., Amazon ECS deployments, containers, CI/CD).
-                      </p>
+                                  {p.website_url ? (
+                                    <a
+                                      href={p.website_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-xs underline"
+                                      style={{
+                                        color: CoffeeRose.mocha,
+                                      }}
+                                    >
+                                      View live →
+                                    </a>
+                                  ) : null}
+                                </div>
+
+                                {p.description && (
+                                  <p
+                                    className="text-sm mt-1"
+                                    style={{ color: CoffeeRose.mocha }}
+                                  >
+                                    {p.description}
+                                  </p>
+                                )}
+
+                                {p.technologies?.length ? (
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    {p.technologies.map((t) => (
+                                      <Chip key={t}>{t}</Chip>
+                                    ))}
+                                  </div>
+                                ) : null}
+
+                                {p.media_url ? (
+                                  <div className="mt-4 rounded overflow-hidden relative group">
+                                    {canPlay ? (
+                                      <>
+                                        {/* Thumbnail/UI */}
+                                        <div
+                                          className="w-full h-40 bg-black/20 flex items-center justify-center rounded cursor-pointer relative"
+                                          style={{
+                                            border: `1px solid ${CoffeeRose.rosewd}`,
+                                          }}
+                                          onClick={() => {
+                                            if (isExternal) {
+                                              
+                                              window.open(
+                                                p.media_url!,
+                                                "_blank",
+                                                "noopener,noreferrer"
+                                              );
+                                            } else {
+                                              
+                                              openModalWithMedia(
+                                                p.media_url!,
+                                                p.title ?? "video"
+                                              );
+                                            }
+                                          }}
+                                        >
+
+                                          <div
+                                            className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors"
+                                            style={{}}
+                                          />
+
+                                          {/* Play button circle */}
+                                          <div
+                                            className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
+                                            style={{
+                                              backgroundColor:
+                                                CoffeeRose.blush,
+                                              border: `2px solid ${CoffeeRose.rosewd}`,
+                                              color: CoffeeRose.mocha,
+                                              fontWeight: 600,
+                                              fontSize: "0.75rem",
+                                            }}
+                                          >
+                                            ▶
+                                          </div>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <img
+                                        src={p.media_url}
+                                        alt={p.title ?? "project screenshot"}
+                                        className="w-full h-40 object-cover rounded shadow cursor-pointer"
+                                        style={{
+                                          border: `1px solid ${CoffeeRose.rosewd}`,
+                                        }}
+                                        onClick={() =>
+                                          openModalWithMedia(
+                                            p.media_url!,
+                                            p.title ?? "screenshot"
+                                          )
+                                        }
+                                        onError={(e) => {
+                                          console.error(
+                                            "Hover img failed to load:",
+                                            p.media_url
+                                          );
+                                          (e.currentTarget.style.display =
+                                            "none");
+                                        }}
+                                      />
+                                    )}
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+
+                          <div className="text-sm text-right pr-2 self-end w-full sm:col-span-2">
+                            <Link
+                              to="/projects"
+                              style={{ color: CoffeeRose.dusty }}
+                              className="underline"
+                            >
+                              View all projects →
+                            </Link>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
+              );
+            })}
+          </nav>
+        </div>
+      </section>
+
+      {isModalOpen && modalMedia && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40"
+            onClick={closeModal}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="relative max-w-5xl w-full max-h-[90vh] bg-white rounded-xl shadow-xl overflow-hidden flex flex-col">
+              <button
+                onClick={closeModal}
+                className="absolute top-3 right-3 text-sm px-2 py-1 rounded border"
+                style={{
+                  backgroundColor: CoffeeRose.cream,
+                  color: CoffeeRose.mocha,
+                  borderColor: CoffeeRose.rosewd,
+                }}
+              >
+                ✕
+              </button>
+
+              <div className="flex-1 overflow-auto flex items-center justify-center p-6 bg-black">
+                {isVideoUrl(modalMedia) ? (
+                  <video
+                    src={modalMedia}
+                    controls
+                    autoPlay
+                    className="max-h-[80vh] max-w-full rounded"
+                    onError={(e) => {
+                      console.error(
+                        "Modal video failed to load or play:",
+                        modalMedia
+                      );
+                      (e.currentTarget.style.display =
+                        "none");
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={modalMedia}
+                    alt={modalAlt}
+                    className="max-h-[80vh] max-w-full rounded object-contain"
+                    onError={(e) => {
+                      console.error(
+                        "Modal image failed to load:",
+                        modalMedia
+                      );
+                      (e.currentTarget.style.display =
+                        "none");
+                    }}
+                  />
+                )}
+              </div>
+
+              <div
+                className="text-sm p-4 border-t"
+                style={{ borderColor: CoffeeRose.rosewd }}
+              >
+                <span
+                  style={{
+                    color: CoffeeRose.mocha,
+                    fontWeight: 500,
+                  }}
+                >
+                  {modalAlt}
+                </span>
+              </div>
             </div>
-          ))}
-        </nav>
-      </div>
-    </section>
+          </div>
+        </>
+      )}
+    </>
   );
 };
 
