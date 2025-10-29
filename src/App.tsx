@@ -2,9 +2,9 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 import HomePage from "./Pages/HomePage";
-import SkillsPage from "../src/components/tabs/SkillsPage";
-import EducationPage from "../src/components/tabs/EducationPage";
-import ProjectsPage from "../src/components/tabs/ProjectsPage";
+import SkillsPage from "./components/tabs/TabPages/SkillsPage";
+import EducationPage from "./components/tabs/TabPages/EducationPage";
+import ProjectsPage from "./components/tabs/TabPages/ProjectsPage";
 
 function App() {
   return (

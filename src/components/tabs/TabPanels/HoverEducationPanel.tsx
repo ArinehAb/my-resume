@@ -1,22 +1,16 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { CoffeeRose } from "../theme";
 
-const CoffeeRose = {
-  cream:  "#FFF8F0",
-  rosewd: "#D4A59A",
-  mocha:  "#6B3E2E",
-  dusty:  "#A76D63",
-  cocoa:  "#7B4B3A",
-};
-
-const EducationPage: React.FC = () => {
+const HoverEducationPanel: React.FC = () => {
   return (
-    <main className="w-full px-8 py-8 max-w-4xl mx-auto">
-      <h1
-        className="text-2xl font-semibold mb-6"
+    <div>
+      <h3
+        className="text-lg font-semibold mb-2"
         style={{ color: CoffeeRose.mocha }}
       >
         Education
-      </h1>
+      </h3>
 
       <div
         className="rounded-lg p-4"
@@ -38,8 +32,18 @@ const EducationPage: React.FC = () => {
           2016 – 2020
         </p>
       </div>
-    </main>
+
+      <div className="text-sm text-right mt-4">
+        <Link
+          to="/education"
+          style={{ color: CoffeeRose.dusty }}
+          className="underline"
+        >
+          View full education →
+        </Link>
+      </div>
+    </div>
   );
 };
 
-export default EducationPage;
+export default HoverEducationPanel;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom"; // <-- NEW
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 
 const CoffeeRose = {
   blush:  "#F5E1DC",
@@ -122,7 +122,7 @@ const ProjectsPage: React.FC = () => {
             borderColor: CoffeeRose.rosewd,
           }}
         >
-          ← Home
+          ← BACK
         </Link>
       </div>
 

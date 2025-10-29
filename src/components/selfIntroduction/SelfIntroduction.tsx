@@ -22,10 +22,9 @@ const SelfIntroduction: React.FC = () => {
           <h2 className="mt-6 text-3xl text-[#7B4B3A]">Software Engineer</h2>
 
           <p className="mt-6 text-lg leading-relaxed text-[#3E2723] max-w-3xl italic">
-            Believes in the positive influence of teamwork, encourages knowledge
-            sharing, and welcomes partnerships. Eager to develop skills while
-            working with a team of professionals for a forward-thinking company
-            and have an opportunity to influence future technology.
+            Passionate about collaboration and continuous learning. Thrives in team environments
+            that encourage knowledge sharing and creative problem-solving. Excited to contribute 
+            to a forward-thinking company shaping the future of technology.
           </p>
         </div>
       </div>

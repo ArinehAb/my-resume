@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
+import { Link } from "react-router-dom";
+import { supabase } from "../../../lib/supabaseClient";
 
 const CoffeeRose = {
   cream:  "#FFF8F0",
@@ -54,8 +55,7 @@ const LevelDots: React.FC<{ level: number }> = ({ level }) => (
         style={{
           backgroundColor:
             i < level ? CoffeeRose.dusty : `${CoffeeRose.rosewd}88`,
-          boxShadow:
-            i < level ? "0 0 0 1px rgba(0,0,0,0.04)" : "none",
+          boxShadow: i < level ? "0 0 0 1px rgba(0,0,0,0.04)" : "none",
         }}
       />
     ))}
@@ -112,12 +112,30 @@ const SkillsPage: React.FC = () => {
 
   return (
     <main className="w-full px-8 py-8 max-w-7xl mx-auto">
-      <h1
-        className="text-2xl font-semibold mb-6"
-        style={{ color: CoffeeRose.mocha }}
-      >
-        Skills
-      </h1>
+      {/* Header row with Back button + title */}
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          to="/"
+          className="text-sm font-medium px-3 py-2 rounded-md border"
+          style={{
+            color: CoffeeRose.mocha,
+            borderColor: CoffeeRose.rosewd,
+            backgroundColor: CoffeeRose.cream,
+          }}
+        >
+          ← Back
+        </Link>
+
+        <h1
+          className="text-2xl font-semibold"
+          style={{ color: CoffeeRose.mocha }}
+        >
+          Skills
+        </h1>
+
+        {/* spacer to keep title visually centered */}
+        <div className="w-[60px]" />
+      </div>
 
       {skillsLoading && (
         <div className="grid gap-5 md:grid-cols-2">
@@ -170,8 +188,7 @@ const SkillsPage: React.FC = () => {
             const avg =
               items.length > 0
                 ? Math.round(
-                    items.reduce((a, b) => a + b.level, 0) /
-                      items.length
+                    items.reduce((a, b) => a + b.level, 0) / items.length
                   )
                 : 0;
 
@@ -182,8 +199,7 @@ const SkillsPage: React.FC = () => {
                 style={{
                   backgroundColor: "#FFFFFF",
                   border: `1px solid ${CoffeeRose.rosewd}`,
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.06)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
                 }}
               >
                 <h3
